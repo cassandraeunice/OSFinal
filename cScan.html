@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+  <title>Circular Scan Disk Scheduling</title>
+  <style>
+    * {
+        font-family: 'Poppins';
+      }
+
+    body {
+      background-color: #FFF6E0;
+      justify-content: center;
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h4 {
+      padding-left: 15px;
+    }
+
+    label, p {
+      display: block;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    input[type="number"] {
+      width: 340px;
+      height: 25px;
+      border-radius: 10px;
+      border: 1px solid #D8D9DA;
+    }
+
+    #request_locations {
+      text-align: center;
+    }
+
+    #request_locations input[type="number"] {
+      display: block;
+      width: 340px;
+      height: 25px;
+      margin: 5px auto;
+      border-radius: 10px;
+      border: 1px solid #D8D9DA;
+    }
+
+    #request_locations label {
+      display: block;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    #output {
+      padding-top: 40px;
+      padding-bottom: 10px;
+    }
+
+    button {
+      width: 347px;
+      height: 40px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #FFF6E0;
+      background-color: #61677A;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #D8D9DA;
+      color: #61677A;
+    }
+
+    nav {
+      height: 60px;
+      width: 100.5%;
+      margin: -15px;
+      padding: 5px;
+      color: #FFF6E0;
+      background-color: #272829;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    ul {
+      margin: 20px;
+      padding: 20px;
+      list-style: none;
+      display: flex;
+      gap: 30px;
+    }
+
+    ul li {
+      display: inline;
+    }
+
+    ul li a {
+      text-decoration: none;
+      color: #FFF6E0;
+    }
+
+  </style>
+</head>
+<body>
+  <nav>
+    <h4>CPU Scheduling & Disk Scheduling Algorithm</h4>
+    <ul>
+      <li><a href="roundrobin.html">Round Robin</a></li>
+      <li><a href="priority.html">Priority (Non-Preemptive)</a></li>
+      <li><a href="cScan.html">Circular Scan</a></li>
+    </ul>
+</nav><br>
+<center>
+<div id="container">
+  <h1>Circular Scan Disk Scheduling</h1>
+  <label for="current_position">Current Position:</label>
+  <input type="number" id="current_position"><br><br>
+  
+  <label for="track_size">Track Size:</label>
+  <input type="number" id="track_size"><br><br>
+  
+  <label for="seek_rate">Seek Rate:</label>
+  <input type="number" id="seek_rate"><br><br>
+  
+  <label for="num_requests">Number of Requests (max 10):</label>
+  <input type="number" id="num_requests" max="10">
+  <p>Locations:</p>
+  <div id="request_locations"></div>
+  <button onclick="collectRequestLocations()">Input Requests</button><br><br> 
+
+  <label for="alpha">Alpha:</label>
+  <input type="number" id="alpha"><br><br>
+  
+  <button onclick="calculate()">Calculate</button>
+  
+  <div id="output"></div>
+</div></center>
+
+  <script>
+    function collectRequestLocations() {
+      var num_requests = parseInt(document.getElementById('num_requests').value);
+      num_requests = Math.min(num_requests, 10); // Ensure maximum of 10 requests
+      
+      var requestLocationsDiv = document.getElementById('request_locations');
+      requestLocationsDiv.innerHTML = '';
+      
+      for (var i = 1; i <= num_requests; i++) {
+        var locInput = document.createElement('input');
+        locInput.type = 'number';
+        locInput.id = 'location_' + i;
+        locInput.placeholder = 'Loc ' + i;
+        requestLocationsDiv.appendChild(locInput);
+      }
+    }
+
+    function calculate() {
+      var current_position = parseInt(document.getElementById('current_position').value);
+      var track_size = parseInt(document.getElementById('track_size').value);
+      var seek_rate = parseInt(document.getElementById('seek_rate').value);
+      var num_requests = parseInt(document.getElementById('num_requests').value);
+      num_requests = Math.min(num_requests, 10); // Ensure maximum of 10 requests
+      var alpha = parseInt(document.getElementById('alpha').value);
+      
+      var locations = [];
+      var requestLocationsDiv = document.getElementById('request_locations');
+      
+      for (var i = 1; i <= num_requests; i++) {
+        var loc = parseInt(document.getElementById('location_' + i).value);
+        if (!isNaN(loc)) {
+          locations.push(loc);
+        } else {
+          alert("Invalid input. Please enter a number for all locations.");
+          return;
+        }
+      }
+      
+      locations.sort(function(a, b){return a - b;});
+      
+      var nearestLeft = locations.filter(loc => loc <= current_position);
+      var nearestRight = locations.filter(loc => loc > current_position);
+      
+      var totalHeadMovement = 0;
+      if (nearestLeft.length > 0 || nearestRight.length > 0) {
+        var leftDistance = current_position - nearestLeft[nearestLeft.length - 1];
+        var rightDistance = nearestRight.length > 0 ? nearestRight[0] - current_position : track_size - current_position;
+        totalHeadMovement = leftDistance + rightDistance;
+      }
+      
+      var seekTime = totalHeadMovement / seek_rate + alpha;
+      
+      var outputDiv = document.getElementById('output');
+      outputDiv.innerHTML = "<p>Total Head Movement: " + totalHeadMovement + "</p><p>Seek Time: " + seekTime + "</p>";
+    }
+  </script>
+</body>
+</html>
